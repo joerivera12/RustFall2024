@@ -1,24 +1,34 @@
+use std::sync::{Arc, Mutex};
 use std::thread;
 
-fn simple_spawn_join() {
+fn share_data_between_threads_with_arc() {
+    let counter = Arc::new(Mutex::new(0));
 
     let mut handles = vec![];
 
-    for i in 1..=3 {
+    for _ in 0..5 {
+        let counter_clone = Arc::clone(&counter);
+
         let handle = thread::spawn(move || {
-            println!("Thread {}", i); 
+            for _ in 0..10 {
+                let mut num = counter_clone.lock().unwrap();
+                *num += 1;
+            }
         });
-        handles.push(handle); 
-    }
-    
-    for handle in handles {
-        handle.join().unwrap(); 
+
+        handles.push(handle);
     }
 
-    
-    println!("All threads completed.");
+    println!("Spawned 5 threads!");
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+
+    let final_value = *counter.lock().unwrap();
+    println!("Final value of the counter: {}", final_value);
 }
 
 fn main() {
-    simple_spawn_join();
+    share_data_between_threads_with_arc();
 }
